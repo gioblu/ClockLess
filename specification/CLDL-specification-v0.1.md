@@ -6,7 +6,7 @@ of Giovanni Blu Mitolo and Fred Larsen - Copyright 2017 All rights reserved
 */
 ```
 ###CLDL (ClockLess Data Link)
-CLDL (ClockLess Data Link) has been specified to provide with an efficient, long range, 2 wires, half-duplex data link. It is engineered for devices running time-critical algorithms, long duration tasks or interrupt driven procedures, that are generally disrupting other data link implementations based on synchronization.
+CLDL (ClockLess Data Link) has been specified to provide with an efficient, long range, 2 wires, half-duplex data link. It is engineered for devices running time-critical algorithms, long duration tasks or interrupt driven procedures, that are generally disrupting other data link implementations based on synchronization and/or time domain.
 
 ###Basic concepts
 * One to one data link on 2 communication wires: Port 0, Port 1
