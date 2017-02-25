@@ -63,6 +63,7 @@ class ClockLess {
 
     void receive() {
       if(transmitting) return;
+      
       if(!sampling) {
         sampling = true;
         mask = 0;
@@ -123,7 +124,7 @@ class ClockLess {
 
 
     void transmit() {
-      if(!transmitting || source == NULL) return;
+      if(!transmitting || sampling || source == NULL) return;
       if(!tx && !rx) {
         if(canStart()) tx = true;
         else return;
@@ -135,8 +136,6 @@ class ClockLess {
       if(tx && !rx)
         if(digitalRead((source[index] & mask) ? pin0 : pin1))
           rx = true;
-
-
       if(tx && rx) {
         pinMode((source[index] & mask) ? pin1 : pin0, INPUT);
         digitalWrite((source[index] & mask) ? pin1 : pin0, LOW);
