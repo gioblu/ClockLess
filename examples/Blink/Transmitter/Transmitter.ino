@@ -1,3 +1,4 @@
+#define CLDL_DEBUG true
 #include <ClockLess.h>
 
 ClockLessDataLink link;
@@ -10,5 +11,5 @@ void setup() {
 }
 
 void loop() {
-  link.update();
+  link.transmit();
 }
