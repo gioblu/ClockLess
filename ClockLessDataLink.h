@@ -26,14 +26,26 @@
   #define CLDL_COLLISION_DELAY 16
 #endif
 
-#ifndef CLDL_MAX_LENGTH
-  #define CLDL_MAX_LENGTH 10
+
+#ifndef CLDL_FAIL
+  #define CLDL_FAIL           -1
+#endif
+
+#ifndef CLDL_BUSY
+  #define CLDL_BUSY           -2
+#endif
+
+#ifndef CLDL_BOTH_PORTS_UP
+  #define CLDL_BOTH_PORTS_UP  -3
+#endif
+
+#ifndef CLDL_SAMPLING
+  #define CLDL_SAMPLING       -4
 #endif
 
 
 class ClockLessDataLink {
   public:
-    uint8_t data[CLDL_MAX_LENGTH];
     uint8_t pin0;
     uint8_t pin1;
     bool    sampling = false;
@@ -62,8 +74,8 @@ class ClockLessDataLink {
     };
 
 
-    void receive() {
-      if(transmitting) return;
+    int16_t receive() {
+      if(transmitting) return CLDL_BUSY;
 
       if(!rx && !tx) {
         /* If ready to sample a byte: */
@@ -72,7 +84,7 @@ class ClockLessDataLink {
           digitalWrite(pin1, LOW);
           pinMode(pin0, INPUT);
           pinMode(pin1, INPUT);
-          if(digitalRead(pin0) && digitalRead(pin1)) return;
+          if(digitalRead(pin0) && digitalRead(pin1)) return CLDL_BOTH_PORTS_UP;
           bitIndex = 0;
           byteValue = B00000000;
         }
@@ -84,7 +96,7 @@ class ClockLessDataLink {
           byteValue += 0 << bitIndex;
         }
         if(digitalRead(pin1)) {
-          if(rx == true) return;
+          if(rx == true) return CLDL_BUSY;
           sampling = true;
           rx = true;
           byteValue += 1 << bitIndex;
@@ -125,11 +137,13 @@ class ClockLessDataLink {
               Serial.print("RX | End byte: ");
               Serial.println(byteValue);
             #endif
-            saveByteInBuffer(byteValue);
             sampling = false;
+            return byteValue;
           }
         }
       }
+      if(sampling) return CLDL_SAMPLING;
+      else return CLDL_FAIL;
     };
 
 
@@ -139,13 +153,6 @@ class ClockLessDataLink {
       byteIndex  = 0;
       bitIndex = 0x01;
       transmitting = true;
-    };
-
-
-    void saveByteInBuffer(uint8_t value) {
-      for(uint8_t i = 0; i < CLDL_MAX_LENGTH - 1; i++)
-        data[i] = data[i + 1];
-      data[CLDL_MAX_LENGTH - 1] = value;
     };
 
 

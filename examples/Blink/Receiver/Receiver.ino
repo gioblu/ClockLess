@@ -1,4 +1,4 @@
-#define CLDL_DEBUG true
+//#define CLDL_DEBUG true
 
 #include <ClockLess.h>
 
@@ -15,13 +15,9 @@ void setup() {
 }
 
 void loop() {
-  link.receive();
-  if(micros() - time > 1000000) {
-  for(uint8_t i = 0; i < CLDL_MAX_LENGTH; i++) {
-    Serial.print(" ");
-    Serial.print((char)link.data[i]);
-    time = micros();
-  }
-  Serial.println();
+  int receivedByte = link.receive();
+  if(receivedByte > 0) {
+    Serial.print((char)receivedByte);
+    Serial.println(" <- RECEIVED");
   }
 }
