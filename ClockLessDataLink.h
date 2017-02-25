@@ -39,6 +39,7 @@ class ClockLessDataLink {
     bool    sampling = false;
     bool    transmitting = false;
 
+
     boolean begin() {
       digitalWrite(pin0, LOW);
       digitalWrite(pin1, LOW);
@@ -64,35 +65,66 @@ class ClockLessDataLink {
     void receive() {
       if(transmitting) return;
 
-      if(!sampling) {
-        sampling = true;
-        mask = 0;
-        byteValue = B00000000;
-        digitalWrite(pin0, LOW);
-        digitalWrite(pin1, LOW);
-        pinMode(pin0, INPUT);
-        pinMode(pin1, INPUT);
-        if(digitalRead(pin0) && digitalRead(pin1)) return;
+      if(!rx && !tx) {
+        /* If ready to sample a byte: */
+        if(!sampling) {
+          digitalWrite(pin0, LOW);
+          digitalWrite(pin1, LOW);
+          pinMode(pin0, INPUT);
+          pinMode(pin1, INPUT);
+          if(digitalRead(pin0) && digitalRead(pin1)) return;
+          bitIndex = 0;
+          byteValue = B00000000;
+        }
+
+        /* Sample data bit: */
+        if(digitalRead(pin0)) {
+          sampling = true;
+          rx = true;
+          byteValue += 0 << bitIndex;
+        }
+        if(digitalRead(pin1)) {
+          if(rx == true) return;
+          sampling = true;
+          rx = true;
+          byteValue += 1 << bitIndex;
+        }
+        #ifdef CLDL_DEBUG
+          if(sampling) {
+            Serial.print("RX | 1 - Received and acking: ");
+            Serial.println(byteValue, BIN);
+          }
+        #endif
       }
 
-      if(!rx && !tx) {
-        if(digitalRead(pin0)) byteValue += 0 << mask;
-        if(digitalRead(pin1)) byteValue += 1 << mask;
-        rx = true;
-      }
       if(rx && !tx) {
-        digitalWrite((byteValue & (1 << mask)) ? pin0 : pin1, HIGH);
-        pinMode((byteValue & (1 << mask)) ? pin0 : pin1, OUTPUT);
+        digitalWrite((byteValue & (1 << bitIndex)) ? pin0 : pin1, HIGH);
+        pinMode((byteValue & (1 << bitIndex)) ? pin0 : pin1, OUTPUT);
         tx = true;
+        #ifdef CLDL_DEBUG
+          Serial.println("RX | 2 - transmit ACK");
+        #endif
       }
       if(rx && tx) {
-        if(!digitalRead((byteValue & (1 << mask)) ? pin1 : pin0)) {
+        if(!digitalRead((byteValue & (1 << bitIndex)) ? pin1 : pin0)) {
+          #ifdef CLDL_DEBUG
+            Serial.println("RX | 3 - transmitter set data port low");
+          #endif
           rx = false;
           tx = false;
-          pinMode((byteValue & (1 << mask)) ? pin1 : pin0, INPUT);
-          digitalWrite((byteValue & (1 << mask)) ? pin1 : pin0, LOW);
-          if((mask + 1) < 8) mask++;
+          pinMode((byteValue & (1 << bitIndex)) ? pin0 : pin1, INPUT);
+          digitalWrite((byteValue & (1 << bitIndex)) ? pin0 : pin1, LOW);
+          if((bitIndex + 1) < 8) {
+            bitIndex++;
+            #ifdef CLDL_DEBUG
+              Serial.println("RX | Next bit");
+            #endif
+          }
           else {
+            #ifdef CLDL_DEBUG
+              Serial.print("RX | End byte: ");
+              Serial.println(byteValue);
+            #endif
             saveByteInBuffer(byteValue);
             sampling = false;
           }
@@ -101,11 +133,11 @@ class ClockLessDataLink {
     };
 
 
-    void sendString(uint8_t *string, uint16_t length) {
-      source = string;
-      length = length;
-      index  = 0;
-      mask = 0x01;
+    void sendString(uint8_t *s, uint16_t l) {
+      source = s;
+      length = l;
+      byteIndex  = 0;
+      bitIndex = 0x01;
       transmitting = true;
     };
 
@@ -126,32 +158,60 @@ class ClockLessDataLink {
     void transmit() {
       if(!transmitting || sampling || source == NULL) return;
       if(!tx && !rx) {
-        if(canStart()) tx = true;
-        else return;
-        digitalWrite(((source[index] & mask) ? pin0 : pin1), LOW);
-        pinMode(((source[index] & mask) ? pin0 : pin1), INPUT);
-        digitalWrite(((source[index] & mask) ? pin1 : pin0), HIGH);
-        pinMode(((source[index] & mask) ? pin1 : pin0), OUTPUT);
+        if(!canStart()) return;
+        tx = true;
+        #ifdef CLDL_DEBUG
+          Serial.println("TX | Init bit tx");
+        #endif
+        digitalWrite(((source[byteIndex] & bitIndex) ? pin0 : pin1), LOW);
+        pinMode(((source[byteIndex] & bitIndex) ? pin0 : pin1), INPUT);
+        digitalWrite(((source[byteIndex] & bitIndex) ? pin1 : pin0), HIGH);
+        pinMode(((source[byteIndex] & bitIndex) ? pin1 : pin0), OUTPUT);
       }
       if(tx && !rx)
-        if(digitalRead((source[index] & mask) ? pin0 : pin1))
+        if(digitalRead((source[byteIndex] & bitIndex) ? pin0 : pin1)) {
           rx = true;
+          #ifdef CLDL_DEBUG
+            Serial.println("TX | 2 Got ACK");
+          #endif
+        }
       if(tx && rx) {
-        pinMode((source[index] & mask) ? pin1 : pin0, INPUT);
-        digitalWrite((source[index] & mask) ? pin1 : pin0, LOW);
+        pinMode((source[byteIndex] & bitIndex) ? pin1 : pin0, INPUT);
+        digitalWrite((source[byteIndex] & bitIndex) ? pin1 : pin0, LOW);
+        #ifdef CLDL_DEBUG
+          Serial.println("TX | 3 Data port down");
+        #endif
         tx = false;
       }
       if(!tx && rx) {
-        if(!digitalRead((source[index] & mask) ? pin0 : pin1)) {
+        if(!digitalRead((source[byteIndex] & bitIndex) ? pin0 : pin1)) {
+          #ifdef CLDL_DEBUG
+            Serial.print("TX | 4 bit: ");
+            Serial.println(bitIndex);
+          #endif
           rx = false;
-          mask <<= 1;
-          if(!mask) {
-            if(index + 1 < length) index++;
-            else {
+          bitIndex <<= 1;
+          if(!bitIndex) {
+            #ifdef CLDL_DEBUG
+              Serial.print("Byte index: ");
+              Serial.print(byteIndex);
+              Serial.print(" | String length: ");
+              Serial.println(length);
+            #endif
+            if(byteIndex + 1 < length) {
+              #ifdef CLDL_DEBUG
+                Serial.println("TX | 5 - Next byte");
+              #endif
+              byteIndex++;
+              bitIndex = 0x01;
+            } else {
               source = NULL;
               length = 0;
-              index = 0;
+              byteIndex = 0;
               transmitting = false;
+              #ifdef CLDL_DEBUG
+                Serial.println("TX END");
+              #endif
             }
           }
         }
@@ -167,9 +227,9 @@ class ClockLessDataLink {
   private:
     bool    rx = false;
     bool    tx = false;
-    uint8_t   mask;
+    uint8_t   bitIndex;
     uint8_t  *source;
     uint8_t   byteValue;
     uint16_t  length = 0;
-    uint8_t   index = 0;
+    uint8_t   byteIndex = 0;
 };
