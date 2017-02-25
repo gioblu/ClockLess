@@ -1,6 +1,6 @@
 #include <ClockLess.h>
 
-ClockLess link;
+ClockLessDataLink link;
 
 void setup() {
   Serial.begin(115200);

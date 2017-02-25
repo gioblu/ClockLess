@@ -1,7 +1,7 @@
 
 #include <ClockLess.h>
 
-ClockLess link;
+ClockLessDataLink link;
 
 void setup() {
   pinMode(13, OUTPUT);

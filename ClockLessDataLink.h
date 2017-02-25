@@ -1,5 +1,5 @@
 
-/* ClockLess
+/* ClockLessDataLink
    2 wires half-duplex point-to-point software emulated digital data link layer
    Compliant with the CLDL data link layer specification v0.1
    _____________________________________________________________________________
@@ -31,7 +31,7 @@
 #endif
 
 
-class ClockLess {
+class ClockLessDataLink {
   public:
     uint8_t data[CLDL_MAX_LENGTH];
     uint8_t pin0;
@@ -63,7 +63,7 @@ class ClockLess {
 
     void receive() {
       if(transmitting) return;
-      
+
       if(!sampling) {
         sampling = true;
         mask = 0;
