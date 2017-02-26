@@ -69,17 +69,16 @@ class ClockLessDataLink {
           if(digitalRead(pin0) && digitalRead(pin1)) return CLDL_BOTH_PORTS_UP;
           bitIndex = 0;
           byteValue = B00000000;
+          sampling = true;
         }
         if(digitalRead(pin0)) {
-            sampling = true;
-            rx = true;
-            byteValue += 0 << bitIndex;
+          rx = true;
+          byteValue += 0 << bitIndex;
         }
         if(digitalRead(pin1)) {
           if(rx == true) return CLDL_BUSY;
-            sampling = true;
-            rx = true;
-            byteValue += 1 << bitIndex;
+          rx = true;
+          byteValue += 1 << bitIndex;
         }
       }
       if(rx && !tx) {
@@ -171,5 +170,4 @@ class ClockLessDataLink {
     uint8_t   byteValue;
     uint16_t  length = 0;
     uint8_t   byteIndex = 0;
-    uint32_t  t;
 };
