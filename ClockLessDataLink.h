@@ -37,7 +37,6 @@ class ClockLessDataLink {
     uint8_t pin1;
     bool    sampling     = false;
     bool    transmitting = false;
-    uint32_t  timeIn     =     1; // 150 microseconds minimum bit duration
 
     boolean begin() {
       digitalWrite(pin0, LOW);
@@ -73,35 +72,26 @@ class ClockLessDataLink {
           bitValue = 0;
         }
         if(digitalRead(pin0)) {
-          if(timeIn < (uint32_t)(micros() - t)) {
             sampling = true;
             rx = true;
             bitValue = 0;
             byteValue += bitValue << bitIndex;
-          }
         }
         if(digitalRead(pin1)) {
           if(rx == true) return CLDL_BUSY;
-          if(timeIn < (uint32_t)(micros() - t)) {
             sampling = true;
             rx = true;
             bitValue = 1;
             byteValue += bitValue << bitIndex;
-          }
         }
       }
       if(rx && !tx) {
         digitalWrite((byteValue & (1 << bitIndex)) ? pin0 : pin1, HIGH);
         pinMode((byteValue & (1 << bitIndex)) ? pin0 : pin1, OUTPUT);
         tx = true;
-        t = micros();
       }
       if(rx && tx) {
-        if(
-          (timeIn < (uint32_t)(micros() - t)) &&
-          !digitalRead((byteValue & (1 << bitIndex)) ? pin1 : pin0)
-        ) {
-          t = micros();
+        if(!digitalRead((byteValue & (1 << bitIndex)) ? pin1 : pin0)) {
           rx = false;
           tx = false;
           digitalWrite((byteValue & (1 << bitIndex)) ? pin0 : pin1, LOW);
@@ -137,26 +127,21 @@ class ClockLessDataLink {
     void transmit() {
       if(!transmitting || sampling || source == NULL) return;
       if(!tx && !rx) {
-        if(!canStart()) return;
         tx = true;
         digitalWrite(((source[byteIndex] & bitIndex) ? pin0 : pin1), LOW);
         pinMode(((source[byteIndex] & bitIndex) ? pin0 : pin1), INPUT);
         digitalWrite(((source[byteIndex] & bitIndex) ? pin1 : pin0), HIGH);
         pinMode(((source[byteIndex] & bitIndex) ? pin1 : pin0), OUTPUT);
-        t = micros();
       }
-      if(tx && !rx && (timeIn < (uint32_t)(micros() - t)))
-        if(digitalRead((source[byteIndex] & bitIndex) ? pin0 : pin1)) {
+      if(tx && !rx)
+        if(digitalRead((source[byteIndex] & bitIndex) ? pin0 : pin1))
           rx = true;
-          t = micros();
-        }
-      if(tx && rx && (timeIn < (uint32_t)(micros() - t))) {
+      if(tx && rx) {
         digitalWrite((source[byteIndex] & bitIndex) ? pin1 : pin0, LOW);
         pinMode((source[byteIndex] & bitIndex) ? pin1 : pin0, INPUT);
         tx = false;
-        t = micros();
       }
-      if(!tx && rx && (timeIn < (uint32_t)(micros() - t))) {
+      if(!tx && rx) {
         if(!digitalRead((source[byteIndex] & bitIndex) ? pin0 : pin1)) {
           rx = false;
           bitIndex <<= 1;
