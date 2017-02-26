@@ -109,6 +109,7 @@ class ClockLessDataLink {
 
     bool sendString(uint8_t *s, uint16_t l) {
       if(!transmitting && !sampling) {
+        if(!canStart()) return false;
         source = s;
         length = l;
         byteIndex  = 0;
