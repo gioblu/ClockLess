@@ -26,30 +26,19 @@
   #define CLDL_COLLISION_DELAY 16
 #endif
 
-
-#ifndef CLDL_FAIL
-  #define CLDL_FAIL           -1
-#endif
-
-#ifndef CLDL_BUSY
-  #define CLDL_BUSY           -2
-#endif
-
-#ifndef CLDL_BOTH_PORTS_UP
-  #define CLDL_BOTH_PORTS_UP  -3
-#endif
-
-#ifndef CLDL_SAMPLING
-  #define CLDL_SAMPLING       -4
-#endif
-
+#define CLDL_FAIL           -1
+#define CLDL_BUSY           -2
+#define CLDL_BOTH_PORTS_UP  -3
+#define CLDL_SAMPLING       -4
+#define CLDL_TRANSMITTING   -5
 
 class ClockLessDataLink {
   public:
     uint8_t pin0;
     uint8_t pin1;
-    bool    sampling = false;
+    bool    sampling     = false;
     bool    transmitting = false;
+    uint32_t  timeIn     =   400; // 400 microseconds minimum bit duration
 
 
     boolean begin() {
@@ -147,12 +136,16 @@ class ClockLessDataLink {
     };
 
 
-    void sendString(uint8_t *s, uint16_t l) {
-      source = s;
-      length = l;
-      byteIndex  = 0;
-      bitIndex = 0x01;
-      transmitting = true;
+    bool sendString(uint8_t *s, uint16_t l) {
+      if(!transmitting && !sampling) {
+        source = s;
+        length = l;
+        byteIndex  = 0;
+        bitIndex = 0x01;
+        transmitting = true;
+        return true;
+      }
+      return false;
     };
 
 
@@ -174,23 +167,26 @@ class ClockLessDataLink {
         pinMode(((source[byteIndex] & bitIndex) ? pin0 : pin1), INPUT);
         digitalWrite(((source[byteIndex] & bitIndex) ? pin1 : pin0), HIGH);
         pinMode(((source[byteIndex] & bitIndex) ? pin1 : pin0), OUTPUT);
+        t = micros();
       }
-      if(tx && !rx)
+      if(tx && !rx && (timeIn < (uint32_t)(micros() - t)))
         if(digitalRead((source[byteIndex] & bitIndex) ? pin0 : pin1)) {
           rx = true;
           #ifdef CLDL_DEBUG
             Serial.println("TX | 2 Got ACK");
           #endif
+          t = micros();
         }
-      if(tx && rx) {
+      if(tx && rx && (timeIn < (uint32_t)(micros() - t))) {
         pinMode((source[byteIndex] & bitIndex) ? pin1 : pin0, INPUT);
         digitalWrite((source[byteIndex] & bitIndex) ? pin1 : pin0, LOW);
         #ifdef CLDL_DEBUG
           Serial.println("TX | 3 Data port down");
         #endif
         tx = false;
+        t = micros();
       }
-      if(!tx && rx) {
+      if(!tx && rx && (timeIn < (uint32_t)(micros() - t))) {
         if(!digitalRead((source[byteIndex] & bitIndex) ? pin0 : pin1)) {
           #ifdef CLDL_DEBUG
             Serial.print("TX | 4 bit: ");
@@ -232,11 +228,12 @@ class ClockLessDataLink {
     };
 
   private:
-    bool    rx = false;
-    bool    tx = false;
+    bool      rx = false;
+    bool      tx = false;
     uint8_t   bitIndex;
     uint8_t  *source;
     uint8_t   byteValue;
     uint16_t  length = 0;
     uint8_t   byteIndex = 0;
+    uint32_t  t;
 };
