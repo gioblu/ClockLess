@@ -2,7 +2,6 @@
 #include <ClockLess.h>
 
 ClockLessDataLink link;
-uint32_t time;
 
 void setup() {
   pinMode(13, OUTPUT);
@@ -10,14 +9,11 @@ void setup() {
   Serial.begin(115200);
   link.setPins(8, 9);
   link.begin();
-  link.timeIn = 1; // 1 microsecond minimum timein
-  time = micros();
 }
 
 void loop() {
   int receivedByte = link.receive();
   if(receivedByte > 0) {
-
     Serial.print((char)receivedByte);
     if(receivedByte == 'o') Serial.println();
 
