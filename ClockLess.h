@@ -136,16 +136,12 @@ class ClockLess {
     number, an error from data-link layer bubbled up. */
 
     uint16_t receive() {
-      uint16_t result;
+      int16_t result;
       if(buffer == initializer) result = dataLink.receive();
       else if(getInitializer()) result = dataLink.receive();
-      if(result) {
+      if(result >= 0) {
         data[index] = result;
-        result = parse();
-        if(result == CLOCKLESS_ACK) {
-          index = 0;
-          return result;
-        }
+        if(parse() == CLOCKLESS_ACK) return result;
         if(index + 1 < CLOCKLESS_MAX_LENGTH) index += 1;
       }
       return result;
@@ -155,18 +151,18 @@ class ClockLess {
     INPUT: None, OUTPUT: If positive number parsed packet length is returned.
     CLOCKLESS_BUFFER_FULL is returned if packet length is longer than buffer. */
 
-    uint16_t parse() {
+    int16_t parse() {
       uint16_t length = CLOCKLESS_MAX_LENGTH;
       if(index == 2) {
         if(data[0] & CLOCKLESS_EXT_LEN_BIT) {
-          if(index >= 2) length = data[1] << 8 | data[2] & 0xFF;
-        } else if(index >= 1) length = data[1];
-
+          length = data[1] << 8 | data[2] & 0xFF;
+        } else length = data[1];
         if(length > CLOCKLESS_MAX_LENGTH)
           return CLOCKLESS_BUFFER_FULL;
       }
 
       if(index == (length - 1)) {
+        index = 0;
         bool computedCrc;
         if(data[0] & CLOCKLESS_CRC_BIT)
           computedCrc = ClockLessCrc32::compare(
@@ -186,7 +182,7 @@ class ClockLess {
     OUTPUT: Bubbles up result from data-link layer
     CLOCKLESS_BUFFER_FULL is returned if length computed is longer than buffer */
 
-    uint16_t sendPacket(uint8_t *source, uint16_t length, uint8_t header = 0) {
+    int16_t sendPacket(uint8_t *source, uint16_t length, uint8_t header = 0) {
       if(!(length = composePacket(source, length, header)))
         return CLOCKLESS_BUFFER_FULL;
       return dataLink.sendString(data, length);
