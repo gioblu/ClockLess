@@ -145,7 +145,6 @@ class ClockLess {
         data[index] = result;
         result = parse();
         if(result > packetOverhead(0) && result < CLOCKLESS_MAX_LENGTH) {
-          crcOverhead = (data[0] & CLOCKLESS_CRC_BIT ? 4 : 1);
           receiver(
             data + (packetOverhead(data[0]) - crcOverhead(data[0])),
             result - crcOverhead(data[0])
