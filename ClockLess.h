@@ -34,11 +34,10 @@
 #endif
 
 #define CLOCKLESS_FAIL        CLDL_FAIL
-#define CLOCKLESS_BUFFER_FULL -11
-#define CLOCKLESS_NAK         -21
-
-#define CLOCKLESS_ACK           6
-#define CLOCKLESS_PROCESSING   11
+#define CLOCKLESS_ACK          -6
+#define CLOCKLESS_PROCESSING   -7
+#define CLOCKLESS_BUFFER_FULL  -8
+#define CLOCKLESS_NAK          -21
 
 /* 0: 1 byte length (255 max bytes), 1: 2 bytes length (max 65535 bytes) */
 #define CLOCKLESS_EXT_LEN_BIT  B01000000
