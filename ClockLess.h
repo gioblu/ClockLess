@@ -125,23 +125,37 @@ class ClockLess {
     uint8_t packetOverhead(uint8_t header = 0) {
       return (
         ((header & CLOCKLESS_EXT_LEN_BIT) ? 2 : 1) +
-        ((header & CLOCKLESS_CRC_BIT)    ? 4 : 1) +
-        4 // initializer
+        + crcOverhead(header) + 4 // initializer
       );
+    };
+
+    uint8_t crcOverhead(uint8_t header = 0) {
+      return (header & CLOCKLESS_CRC_BIT) ? 4 : 1;
     };
 
     /* Try to receive data
     INPUT: None, OUTPUT: If positive number, a byte is returned, if negative
     number, an error from data-link layer bubbled up. */
 
-    uint16_t receive() {
+    int16_t receive() {
       int16_t result;
       if(buffer == initializer) result = dataLink.receive();
       else if(getInitializer()) result = dataLink.receive();
       if(result >= 0) {
         data[index] = result;
-        if(parse() == CLOCKLESS_ACK) return result;
+        result = parse();
+        if(result > packetOverhead(0) && result < CLOCKLESS_MAX_LENGTH) {
+          crcOverhead = (data[0] & CLOCKLESS_CRC_BIT ? 4 : 1);
+          receiver(
+            data + (packetOverhead(data[0]) - crcOverhead(data[0])),
+            result - crcOverhead(data[0])
+          );
+          initializer = 0;
+          index = 0;
+          return result;
+        }
         if(index + 1 < CLOCKLESS_MAX_LENGTH) index += 1;
+        else return CLOCKLESS_BUFFER_FULL;
       }
       return result;
     };
@@ -161,7 +175,6 @@ class ClockLess {
       }
 
       if(index == (length - 1)) {
-        index = 0;
         bool computedCrc;
         if(data[0] & CLOCKLESS_CRC_BIT)
           computedCrc = ClockLessCrc32::compare(
@@ -169,9 +182,7 @@ class ClockLess {
           );
         else computedCrc = !ClockLessCrc8::compute(data, length);
         if(!computedCrc) return CLOCKLESS_NAK;
-        receiver(data + 1, length - (data[0] & CLOCKLESS_CRC_BIT ? 4 : 1));
-        initializer = 0;
-        return CLOCKLESS_ACK;
+        return length;
       }
       return CLOCKLESS_PROCESSING;
     };
