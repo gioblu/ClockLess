@@ -58,8 +58,8 @@ class ClockLessDataLink {
       return true;
     };
 
-    int16_t receive() {
-      if(transmitting) return CLDL_BUSY;
+    int16_t receive(uint8_t l = 8) {
+      if(transmitting) return CLDL_TRANSMITTING;
       if(!rx && !tx) {
         if(!sampling) {
           digitalWrite(pin0, LOW);
@@ -76,7 +76,7 @@ class ClockLessDataLink {
           byteValue += 0 << bitIndex;
         }
         if(digitalRead(pin1)) {
-          if(rx == true) return CLDL_BUSY;
+          if(rx == true) return CLDL_BOTH_PORTS_UP;
           rx = true;
           byteValue += 1 << bitIndex;
         }
@@ -92,7 +92,7 @@ class ClockLessDataLink {
           tx = false;
           digitalWrite((byteValue & (1 << bitIndex)) ? pin0 : pin1, LOW);
           pinMode((byteValue & (1 << bitIndex)) ? pin0 : pin1, INPUT);
-          if((bitIndex + 1) < 8) bitIndex++;
+          if((bitIndex + 1) < l) bitIndex++;
           else {
             sampling = false;
             return byteValue;
@@ -103,17 +103,16 @@ class ClockLessDataLink {
       else return CLDL_FAIL;
     };
 
-    bool sendString(uint8_t *s, uint16_t l) {
-      if(!transmitting && !sampling) {
-        if(!canStart()) return false;
-        source = s;
-        length = l;
-        byteIndex  = 0;
-        bitIndex = 0x01;
-        transmitting = true;
-        return true;
-      }
-      return false;
+    int16_t sendString(uint8_t *s, uint16_t l) {
+      if(transmitting) return CLDL_TRANSMITTING;
+      if(sampling) return CLDL_SAMPLING;
+      if(!canStart()) return CLDL_BUSY;
+      source = s;
+      length = l;
+      byteIndex  = 0;
+      bitIndex = 0x01;
+      transmitting = true;
+      return CLDL_TRANSMITTING;
     };
 
     void setPins(uint8_t p0, uint8_t p1) {
