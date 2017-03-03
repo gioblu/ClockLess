@@ -12,7 +12,8 @@ void setup() {
 
 void loop() {
   while((uint32_t)(millis() - time) > 1000) {
-    link.sendString((uint8_t *)"ciao\n", 4);
+    if(link.canStart())
+      link.sendString((uint8_t *)"ciao\n", 4);
     time = millis();
   }
   link.transmit();
