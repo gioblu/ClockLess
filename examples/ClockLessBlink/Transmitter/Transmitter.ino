@@ -12,5 +12,5 @@ void setup() {
 
 void loop() {
   pair.sendPacket((uint8_t *)"@", 1);
-  pair.dataLink.transmit();
+  pair.update();
 }
