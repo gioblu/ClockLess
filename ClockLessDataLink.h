@@ -105,7 +105,6 @@ class ClockLessDataLink {
     int16_t sendString(uint8_t *s, uint16_t l) {
       if(transmitting) return CLDL_TRANSMITTING;
       if(sampling) return CLDL_SAMPLING;
-      if(!canStart()) return CLDL_BUSY;
       source = s;
       length = l;
       byteIndex  = 0;
