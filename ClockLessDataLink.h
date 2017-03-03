@@ -155,7 +155,6 @@ class ClockLessDataLink {
     };
 
     void update() {
-      receive();
       transmit();
     };
 
