@@ -1,8 +1,8 @@
 ```cpp
 /*
 Milan, Italy - 24/02/2017
-CLDL (ClockLess data link) specification is an invention and intellectual property
-of Giovanni Blu Mitolo and Fred Larsen - Copyright 2017 All rights reserved
+CLDL (ClockLess data link) is an asynchronous 4-phase level-signaling protocol.
+Specification drafted by Giovanni Blu Mitolo and Fred Larsen
 */
 ```
 ###CLDL (ClockLess Data Link)
