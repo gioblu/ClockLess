@@ -117,6 +117,7 @@ class ClockLess {
     number, an error from data-link layer bubbled up. */
 
     int16_t receive() {
+      if(dataLink.transmitting) return CLOCKLESS_BUSY;
       int16_t result = CLOCKLESS_FAIL;
       if(buffer == initializer) result = dataLink.receive();
       else if(getInitializer()) {
