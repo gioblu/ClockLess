@@ -26,10 +26,9 @@
 #endif
 
 #define CLDL_FAIL           -1
-#define CLDL_BUSY           -2
-#define CLDL_BOTH_PORTS_UP  -3
-#define CLDL_SAMPLING       -4
-#define CLDL_TRANSMITTING   -5
+#define CLDL_BOTH_PORTS_UP  -2
+#define CLDL_SAMPLING       -3
+#define CLDL_TRANSMITTING   -4
 
 class ClockLessDataLink {
   public:
