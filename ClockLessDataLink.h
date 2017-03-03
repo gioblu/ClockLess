@@ -20,8 +20,7 @@
 
 #pragma once
 
-#include "interfaces/ArduinoInterface.h"
-#include "interfaces/RaspBerryInterface.h"
+#include "interfaces/Interfaces.h"
 
 #ifndef CLDL_COLLISION_DELAY
   #define CLDL_COLLISION_DELAY 16
