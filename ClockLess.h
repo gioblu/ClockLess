@@ -89,25 +89,11 @@ class ClockLess {
     bool getInitializer() {
       int16_t result = dataLink.receive(1);
       if(result >= 0) {
-        Serial.print("result: ");
-        Serial.println(result, BIN);
-        Serial.print("result (byte): ");
-        Serial.println(result);
-        Serial.print("buffer: ");
-        Serial.println(buffer, BIN);
-        Serial.print("initializer: ");
-        Serial.println(initializer, BIN);
-        Serial.println();
+        buffer >>= 1;
+        buffer |= ((uint32_t)result << 31);
       }
-      delay(100);
-      if(result >= 0) {
-        buffer <<= 1; /* TODO - fix 0s on left disappears when shifed */
-        buffer |= result;
-      }
-      if(buffer == initializer) {
-        Serial.println("WIN");
+      if(buffer == initializer)
         return true;
-      }
       return false;
     };
 
