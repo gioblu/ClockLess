@@ -26,6 +26,4 @@
   #ifndef CLDL_RANDOM_SEED
     #define CLDL_RANDOM_SEED randomSeed
   #endif
-
-
 #endif
