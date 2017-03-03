@@ -59,3 +59,16 @@ Byte B01010101 transmission sample
 |PORT 1| |0| 1 |0| 1 |0|0|0| 1 |0| 1 |0|0|0| 1 |0| 1 |0|0|0| 1 |0| 1 |0| |PORT 1|
 |______| |_|___|_|___|_|_|_|___|_|___|_|_|_|___|_|___|_|_|_|___|_|___|_| |______|
 ```
+
+####Byte stream transmission
+Both devices can attempt to send a byte stream to the other. Before initiating transmission both ports are read to check if there is an ongoing communication. If both ports have logic state 0, a small random time is passed, and both ports are still having logic state 0 transmission can be initiated.  
+
+```cpp
+ ______      _____________________________________________________      ______
+|      |    | CHANNEL ANALYSIS | TRANSMISSION                     |    |      |
+|PORT 0|0000|000000000000000000| data                             |0000|PORT 0|
+|______|____|__________________|__________________________________|____|______|
+|      |    |                  |                                  |    |      |
+|PORT 1|0000|000000000000000000| data                             |0000|PORT 1|
+|______|____|__________________|__________________________________|____|______|
+```
