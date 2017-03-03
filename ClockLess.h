@@ -62,33 +62,24 @@ class ClockLess {
       if(newLength > CLOCKLESS_MAX_LENGTH)
         return CLOCKLESS_BUFFER_FULL;
       if(newLength > 255) header |= CLOCKLESS_EXT_LEN_BIT | CLOCKLESS_CRC_BIT;
-
       memcpy(data, &initializer, 4);
       data[4] = header;
       if(newLength < 255) data[5] = newLength;
       else memcpy(data + 5, &newLength, 2);
       memcpy(
-        data + ((newLength - length) - ((header & CLOCKLESS_CRC_BIT) ? 4 : 1)),
-        &source,
+        data + (packetOverhead(header) - crcOverhead(header)),
+        source,
         length
       );
-
       if(header & CLOCKLESS_CRC_BIT) {
         uint32_t computedCrc =
-          ClockLessCrc32::compute((uint8_t *)data, newLength - 4);
+          ClockLessCrc32::compute(data + 4, newLength - 8);
         data[newLength - 4] = (uint32_t)(computedCrc) >> 24;
         data[newLength - 3] = (uint32_t)(computedCrc) >> 16;
         data[newLength - 2] = (uint32_t)(computedCrc) >>  8;
         data[newLength - 1] = (uint32_t)(computedCrc);
       } else data[newLength - 1] =
-        ClockLessCrc8::compute((uint8_t *)data, newLength - 1);
-
-      for(uint8_t i = 0; i < newLength; i++) {
-        Serial.print(data[i]);
-        Serial.print(" ");
-      }
-
-      Serial.println();
+        ClockLessCrc8::compute(data + 4, newLength - 5);
       return newLength;
     };
 
@@ -180,7 +171,7 @@ class ClockLess {
           computedCrc = ClockLessCrc32::compare(
             ClockLessCrc32::compute(data, length - 4), data + (length - 4)
           );
-        else computedCrc = !ClockLessCrc8::compute(data, length);
+        else computedCrc = !ClockLessCrc8::compute(data, length - 4);
         if(!computedCrc) return CLOCKLESS_NAK;
         return length;
       }
