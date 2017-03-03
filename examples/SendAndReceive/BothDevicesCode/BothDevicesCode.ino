@@ -1,0 +1,35 @@
+#include <ClockLess.h>
+
+ClockLess pair;
+uint32_t time;
+
+/* In this example a @ character is pinged between two devices */
+
+void setup() {
+  pinMode(13, OUTPUT);
+  digitalWrite(13, LOW); // Initialize LED 13 to be off
+  Serial.begin(115200);
+  pair.dataLink.setPins(8, 9);
+  pair.dataLink.begin();
+  pair.setReceiver(receiver);
+  time = millis();
+  pair.sendPacket((uint8_t *)"@", 1);
+}
+
+
+void receiver(uint8_t *payload, uint16_t length) {
+  if(payload[0] == '@') {
+    Serial.println("Blink");
+    digitalWrite(13, HIGH);
+    delay(10);
+    digitalWrite(13, LOW);
+    delay(10);
+    pair.sendPacket((uint8_t *)"@", 1);
+  }
+}
+
+
+void loop() {
+  pair.update();
+  pair.receive();
+}
