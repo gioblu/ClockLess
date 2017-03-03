@@ -103,7 +103,8 @@ class ClockLess {
     uint8_t packetOverhead(uint8_t header = 0) {
       return (
         ((header & CLOCKLESS_EXT_LEN_BIT) ? 2 : 1) +
-        + crcOverhead(header) + 4 // initializer
+        crcOverhead(header) + 4 // initializer
+        + 1 // header
       );
     };
 
