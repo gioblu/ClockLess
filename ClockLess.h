@@ -20,7 +20,6 @@
     limitations under the License. */
 
 #pragma once
-#include <Arduino.h>
 #include <ClockLessDataLink.h>
 #include "utils/ClockLessCrc8.h"
 #include "utils/ClockLessCrc32.h"

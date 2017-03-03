@@ -19,7 +19,9 @@
     limitations under the License. */
 
 #pragma once
-#include <Arduino.h>
+
+#include "interfaces/ArduinoInterface.h"
+#include "interfaces/RaspBerryInterface.h"
 
 #ifndef CLDL_COLLISION_DELAY
   #define CLDL_COLLISION_DELAY 16
@@ -38,22 +40,22 @@ class ClockLessDataLink {
     bool    transmitting = false;
 
     boolean begin() {
-      digitalWrite(pin0, LOW);
-      digitalWrite(pin1, LOW);
-      pinMode(pin0, INPUT);
-      pinMode(pin1, INPUT);
+      CLDL_WRITE(pin0, LOW);
+      CLDL_WRITE(pin1, LOW);
+      CLDL_MODE(pin0, INPUT);
+      CLDL_MODE(pin1, INPUT);
       return true;
     };
 
     bool canStart() {
       if(tx || rx) return false;
-      digitalWrite(pin0, LOW);
-      digitalWrite(pin1, LOW);
-      pinMode(pin0, INPUT);
-      pinMode(pin1, INPUT);
-      if(digitalRead(pin0) || digitalRead(pin1)) return false;
-      delayMicroseconds(random(0, CLDL_COLLISION_DELAY));
-      if(digitalRead(pin0) || digitalRead(pin1)) return false;
+      CLDL_WRITE(pin0, LOW);
+      CLDL_WRITE(pin1, LOW);
+      CLDL_MODE(pin0, INPUT);
+      CLDL_MODE(pin1, INPUT);
+      if(CLDL_READ(pin0) || CLDL_READ(pin1)) return false;
+      CLDL_DELAY_MICROSECONDS(CLDL_RANDOM(0, CLDL_COLLISION_DELAY));
+      if(CLDL_READ(pin0) || CLDL_READ(pin1)) return false;
       return true;
     };
 
@@ -61,36 +63,36 @@ class ClockLessDataLink {
       if(transmitting) return CLDL_TRANSMITTING;
       if(!rx && !tx) {
         if(!sampling) {
-          digitalWrite(pin0, LOW);
-          digitalWrite(pin1, LOW);
-          pinMode(pin0, INPUT);
-          pinMode(pin1, INPUT);
-          if(digitalRead(pin0) && digitalRead(pin1)) return CLDL_BOTH_PORTS_UP;
+          CLDL_WRITE(pin0, LOW);
+          CLDL_WRITE(pin1, LOW);
+          CLDL_MODE(pin0, INPUT);
+          CLDL_MODE(pin1, INPUT);
+          if(CLDL_READ(pin0) && CLDL_READ(pin1)) return CLDL_BOTH_PORTS_UP;
           bitIndex = 0;
           byteValue = B00000000;
           sampling = true;
         }
-        if(digitalRead(pin0)) {
+        if(CLDL_READ(pin0)) {
           rx = true;
           byteValue += 0 << bitIndex;
         }
-        if(digitalRead(pin1)) {
+        if(CLDL_READ(pin1)) {
           if(rx == true) return CLDL_BOTH_PORTS_UP;
           rx = true;
           byteValue += 1 << bitIndex;
         }
       }
       if(rx && !tx) {
-        digitalWrite((byteValue & (1 << bitIndex)) ? pin0 : pin1, HIGH);
-        pinMode((byteValue & (1 << bitIndex)) ? pin0 : pin1, OUTPUT);
+        CLDL_WRITE((byteValue & (1 << bitIndex)) ? pin0 : pin1, HIGH);
+        CLDL_MODE((byteValue & (1 << bitIndex)) ? pin0 : pin1, OUTPUT);
         tx = true;
       }
       if(rx && tx) {
-        if(!digitalRead((byteValue & (1 << bitIndex)) ? pin1 : pin0)) {
+        if(!CLDL_READ((byteValue & (1 << bitIndex)) ? pin1 : pin0)) {
           rx = false;
           tx = false;
-          digitalWrite((byteValue & (1 << bitIndex)) ? pin0 : pin1, LOW);
-          pinMode((byteValue & (1 << bitIndex)) ? pin0 : pin1, INPUT);
+          CLDL_WRITE((byteValue & (1 << bitIndex)) ? pin0 : pin1, LOW);
+          CLDL_MODE((byteValue & (1 << bitIndex)) ? pin0 : pin1, INPUT);
           if((bitIndex + 1) < l) bitIndex++;
           else {
             sampling = false;
@@ -122,21 +124,21 @@ class ClockLessDataLink {
       if(!transmitting || sampling || source == NULL) return;
       if(!tx && !rx) {
         tx = true;
-        digitalWrite(((source[byteIndex] & bitIndex) ? pin0 : pin1), LOW);
-        pinMode(((source[byteIndex] & bitIndex) ? pin0 : pin1), INPUT);
-        digitalWrite(((source[byteIndex] & bitIndex) ? pin1 : pin0), HIGH);
-        pinMode(((source[byteIndex] & bitIndex) ? pin1 : pin0), OUTPUT);
+        CLDL_WRITE(((source[byteIndex] & bitIndex) ? pin0 : pin1), LOW);
+        CLDL_MODE(((source[byteIndex] & bitIndex) ? pin0 : pin1), INPUT);
+        CLDL_WRITE(((source[byteIndex] & bitIndex) ? pin1 : pin0), HIGH);
+        CLDL_MODE(((source[byteIndex] & bitIndex) ? pin1 : pin0), OUTPUT);
       }
       if(tx && !rx)
-        if(digitalRead((source[byteIndex] & bitIndex) ? pin0 : pin1))
+        if(CLDL_READ((source[byteIndex] & bitIndex) ? pin0 : pin1))
           rx = true;
       if(tx && rx) {
-        digitalWrite((source[byteIndex] & bitIndex) ? pin1 : pin0, LOW);
-        pinMode((source[byteIndex] & bitIndex) ? pin1 : pin0, INPUT);
+        CLDL_WRITE((source[byteIndex] & bitIndex) ? pin1 : pin0, LOW);
+        CLDL_MODE((source[byteIndex] & bitIndex) ? pin1 : pin0, INPUT);
         tx = false;
       }
       if(!tx && rx) {
-        if(!digitalRead((source[byteIndex] & bitIndex) ? pin0 : pin1)) {
+        if(!CLDL_READ((source[byteIndex] & bitIndex) ? pin0 : pin1)) {
           rx = false;
           bitIndex <<= 1;
           if(!bitIndex) {
