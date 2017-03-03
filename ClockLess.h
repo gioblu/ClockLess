@@ -117,23 +117,35 @@ class ClockLess {
     number, an error from data-link layer bubbled up. */
 
     int16_t receive() {
-      int16_t result;
+      int16_t result = CLOCKLESS_FAIL;
       if(buffer == initializer) result = dataLink.receive();
-      else if(getInitializer()) result = dataLink.receive();
+      else if(getInitializer()) {
+        index = 0;
+        result = dataLink.receive();
+      }
       if(result >= 0) {
         data[index] = result;
         result = parse();
-        if(result > packetOverhead(0) && result < CLOCKLESS_MAX_LENGTH) {
+        if(result == CLOCKLESS_NAK || result == CLOCKLESS_BUFFER_FULL) {
+          index = 0;
+          buffer = 0;
+          return result;
+        }
+        if(result > packetOverhead(0)  && result < CLOCKLESS_MAX_LENGTH) {
           receiver(
-            data + (packetOverhead(data[0]) - crcOverhead(data[0])),
+            data + (packetOverhead(data[0]) - crcOverhead(data[0]) - 4),
             result - crcOverhead(data[0])
           );
-          initializer = 0;
           index = 0;
+          buffer = 0;
           return result;
         }
         if(index + 1 < CLOCKLESS_MAX_LENGTH) index += 1;
-        else return CLOCKLESS_BUFFER_FULL;
+        else {
+          index = 0;
+          buffer = 0;
+          return CLOCKLESS_BUFFER_FULL;
+        }
       }
       return result;
     };
@@ -143,16 +155,15 @@ class ClockLess {
     CLOCKLESS_BUFFER_FULL is returned if packet length is longer than buffer. */
 
     int16_t parse() {
-      uint16_t length = CLOCKLESS_MAX_LENGTH;
-      if(index == 2) {
+      uint16_t length = CLOCKLESS_MAX_LENGTH - 1;
+      if(index >= 2) {
         if(data[0] & CLOCKLESS_EXT_LEN_BIT) {
           length = data[1] << 8 | data[2] & 0xFF;
         } else length = data[1];
         if(length > CLOCKLESS_MAX_LENGTH)
           return CLOCKLESS_BUFFER_FULL;
       }
-
-      if(index == (length - 1)) {
+      if(index == (length - 5)) {
         bool computedCrc;
         if(data[0] & CLOCKLESS_CRC_BIT)
           computedCrc = ClockLessCrc32::compare(
