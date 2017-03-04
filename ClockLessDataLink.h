@@ -155,7 +155,7 @@ class ClockLessDataLink {
           rx = true;
       if(tx && rx) {
         CLDL_WRITE((source[byteIndex] & bitIndex) ? pin1 : pin0, LOW);
-        CLDL_MODE((source[byteIndex] & bitIndex) ? pin1 : pin0, INPUT);
+        CLDL_MODE((source[byteIndex] & bitIndex) ? pin1 : pin0, OUTPUT);
         tx = false;
       }
       if(!tx && rx) {
