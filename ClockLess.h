@@ -182,7 +182,7 @@ class ClockLess {
     CLOCKLESS_BUFFER_FULL is returned if length computed is longer than buffer */
 
     int16_t sendPacket(uint8_t *source, uint16_t length, uint8_t header = 0) {
-      if(!dataLink.canStart() || dataLink.sampling || dataLink.transmitting)
+      if(dataLink.sampling || dataLink.transmitting || !dataLink.canStart())
         return CLOCKLESS_BUSY;
       if(!(length = composePacket(source, length, header)))
         return CLOCKLESS_BUFFER_FULL;
