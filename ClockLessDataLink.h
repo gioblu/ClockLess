@@ -132,10 +132,8 @@ class ClockLessDataLink {
     };
 
     void setBaseState() {
-      CLDL_WRITE(pin0, LOW);
-      CLDL_WRITE(pin1, LOW);
-      CLDL_MODE(pin0, INPUT);
-      CLDL_MODE(pin1, INPUT);
+      CLDL_READ_PULL_DOWN(pin0);
+      CLDL_READ_PULL_DOWN(pin1);
     };
 
     void setPins(uint8_t p0, uint8_t p1) {

@@ -11,6 +11,10 @@
     #define CLDL_READ digitalRead
   #endif
 
+  #ifndef CLDL_READ_PULL_DOWN
+    /* TODO - To be implemented */
+  #endif
+
   #ifndef CLDL_MODE
     #define CLDL_MODE pinMode
   #endif
