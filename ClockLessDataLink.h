@@ -59,7 +59,24 @@ class ClockLessDataLink {
       return true;
     };
 
+    bool timeOut() {
+      if(sampling || transmitting)
+        if(CLDL_MAX_TIMEOUT < (uint32_t)(micros() - start)) {
+          transmitting = false;
+          sampling = false;
+          tx = false;
+          rx = false;
+          bitIndex = 0;
+          byteIndex = 0;
+          start = micros();
+          setBaseState();
+          return true;
+        }
+      return false;
+    };
+
     int16_t receive(uint8_t l = 8) {
+      if(timeOut()) return CLDL_TIMEOUT;
       if(transmitting) return CLDL_TRANSMITTING;
       if(!rx && !tx) {
         if(!sampling) {
@@ -68,6 +85,7 @@ class ClockLessDataLink {
           bitIndex = 0;
           byteValue = B00000000;
           sampling = true;
+          start = micros();
         }
         if(CLDL_READ(pin0)) {
           rx = true;
@@ -109,6 +127,7 @@ class ClockLessDataLink {
       byteIndex  = 0;
       bitIndex = 0x01;
       transmitting = true;
+      start = micros();
       return CLDL_TRANSMITTING;
     };
 
@@ -124,7 +143,8 @@ class ClockLessDataLink {
       pin1 = p1;
     };
 
-    void transmit() {
+    void update() {
+      if(timeOut()) return;
       if(!transmitting || sampling || source == NULL) return;
       if(!tx && !rx) {
         tx = true;
@@ -160,10 +180,6 @@ class ClockLessDataLink {
       }
     };
 
-    void update() {
-      transmit();
-    };
-
   private:
     bool      rx = false;
     bool      tx = false;
@@ -171,5 +187,6 @@ class ClockLessDataLink {
     uint8_t  *source;
     uint8_t   byteValue;
     uint16_t  length = 0;
+    uint32_t  start = 0;
     uint8_t   byteIndex = 0;
 };
