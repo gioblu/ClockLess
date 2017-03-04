@@ -46,19 +46,13 @@ class ClockLessDataLink {
     bool    transmitting = false;
 
     boolean begin() {
-      CLDL_WRITE(pin0, LOW);
-      CLDL_WRITE(pin1, LOW);
-      CLDL_MODE(pin0, INPUT);
-      CLDL_MODE(pin1, INPUT);
+      setBaseState();
       return true;
     };
 
     bool canStart() {
       if(tx || rx) return false;
-      CLDL_WRITE(pin0, LOW);
-      CLDL_WRITE(pin1, LOW);
-      CLDL_MODE(pin0, INPUT);
-      CLDL_MODE(pin1, INPUT);
+      setBaseState();
       if(CLDL_READ(pin0) || CLDL_READ(pin1)) return false;
       CLDL_DELAY_MICROSECONDS(CLDL_RANDOM(0, CLDL_COLLISION_DELAY));
       if(CLDL_READ(pin0) || CLDL_READ(pin1)) return false;
@@ -69,10 +63,7 @@ class ClockLessDataLink {
       if(transmitting) return CLDL_TRANSMITTING;
       if(!rx && !tx) {
         if(!sampling) {
-          CLDL_WRITE(pin0, LOW);
-          CLDL_WRITE(pin1, LOW);
-          CLDL_MODE(pin0, INPUT);
-          CLDL_MODE(pin1, INPUT);
+          setBaseState();
           if(CLDL_READ(pin0) && CLDL_READ(pin1)) return CLDL_BOTH_PORTS_UP;
           bitIndex = 0;
           byteValue = B00000000;
@@ -119,6 +110,13 @@ class ClockLessDataLink {
       bitIndex = 0x01;
       transmitting = true;
       return CLDL_TRANSMITTING;
+    };
+
+    void setBaseState() {
+      CLDL_WRITE(pin0, LOW);
+      CLDL_WRITE(pin1, LOW);
+      CLDL_MODE(pin0, INPUT);
+      CLDL_MODE(pin1, INPUT);
     };
 
     void setPins(uint8_t p0, uint8_t p1) {
