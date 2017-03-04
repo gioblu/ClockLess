@@ -46,13 +46,15 @@ class ClockLessDataLink {
     bool    transmitting = false;
 
     boolean begin() {
-      setBaseState();
+      CLDL_READ_PULL_DOWN(pin0);
+      CLDL_READ_PULL_DOWN(pin1);
       return true;
     };
 
     bool canStart() {
       if(tx || rx) return false;
-      setBaseState();
+      CLDL_READ_PULL_DOWN(pin0);
+      CLDL_READ_PULL_DOWN(pin1);
       if(CLDL_READ(pin0) || CLDL_READ(pin1)) return false;
       CLDL_DELAY_MICROSECONDS(CLDL_RANDOM(0, CLDL_COLLISION_DELAY));
       if(CLDL_READ(pin0) || CLDL_READ(pin1)) return false;
@@ -69,7 +71,8 @@ class ClockLessDataLink {
           bitIndex = 0;
           byteIndex = 0;
           start = micros();
-          setBaseState();
+          CLDL_READ_PULL_DOWN(pin0);
+          CLDL_READ_PULL_DOWN(pin1);
           return true;
         }
       return false;
@@ -80,7 +83,8 @@ class ClockLessDataLink {
       if(transmitting) return CLDL_TRANSMITTING;
       if(!rx && !tx) {
         if(!sampling) {
-          setBaseState();
+          CLDL_READ_PULL_DOWN(pin0);
+          CLDL_READ_PULL_DOWN(pin1);
           if(CLDL_READ(pin0) && CLDL_READ(pin1)) return CLDL_BOTH_PORTS_UP;
           bitIndex = 0;
           byteValue = B00000000;
@@ -129,11 +133,6 @@ class ClockLessDataLink {
       transmitting = true;
       start = micros();
       return CLDL_TRANSMITTING;
-    };
-
-    void setBaseState() {
-      CLDL_READ_PULL_DOWN(pin0);
-      CLDL_READ_PULL_DOWN(pin1);
     };
 
     void setPins(uint8_t p0, uint8_t p1) {
