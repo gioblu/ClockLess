@@ -22,14 +22,21 @@
 
 #include "interfaces/Interfaces.h"
 
+/* Maximum random delay before transmission (16 microseconds) */
 #ifndef CLDL_COLLISION_DELAY
   #define CLDL_COLLISION_DELAY 16
+#endif
+
+/* Maximum waiting time (3 seconds) before returning CLDL_TIMEOUT */
+#ifndef CLDL_MAX_TIMEOUT
+  #define CLDL_MAX_TIMEOUT 3000000
 #endif
 
 #define CLDL_FAIL           -1
 #define CLDL_BOTH_PORTS_UP  -2
 #define CLDL_SAMPLING       -3
 #define CLDL_TRANSMITTING   -4
+#define CLDL_TIMEOUT        -5
 
 class ClockLessDataLink {
   public:
